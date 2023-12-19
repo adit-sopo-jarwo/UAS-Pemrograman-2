@@ -4,14 +4,13 @@
  */
 package UAS.pemrogramanJaringan;
 
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.Attributes;
+import java.util.jar.Attributes;
 import javax.naming.directory.Attribute;
+import javax.naming.directory.InitialDirContext;
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.swing.DefaultListModel;
 
 /**
@@ -92,61 +91,48 @@ public class javaDNS extends javax.swing.JFrame {
 
     private void btnProsesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnProsesActionPerformed
         // TODO add your handling code here:
+      InetAddress inetAddress;
         String domain = txtDomain.getText();
         DefaultListModel mod = new DefaultListModel();
         listHasil.setModel(mod);
 
         try {
-            InetAddress[] addresses = InetAddress.getAllByName(domain);
+            if (Character.isDigit(domain.charAt(0))) {
 
-            for (InetAddress address : addresses) {
-                String hostName = "Host : " + address.getHostName();
-                mod.addElement(hostName);
-
-                String IPAddress = "IP : " + address.getHostAddress() + "\n";
-                mod.addElement(IPAddress);
-
-                if (address instanceof Inet6Address) {
-                    // IPv6 address, you may handle it differently if needed
-                } else {
-                    // IPv4 address, perform DNS lookup
-                    performDnsLookup(address.getHostName(), mod);
+                byte[] b = new byte[4];
+                String[] bytes = domain.split("[.]");
+                for (int i = 0; i < bytes.length; i++) {
+                    b[i] = Integer.valueOf(bytes[i]).byteValue();
                 }
+                inetAddress = InetAddress.getByAddress(b);
+            } else {
+                inetAddress = InetAddress.getByName(domain);
             }
-        } catch (UnknownHostException e) {
-            System.err.println("Error: Domain Tidak Diketahui '" + domain + "'");
-            e.printStackTrace();
+
+            String hostName = "Host : " + inetAddress.getHostName();
+            mod.addElement(hostName);
+            String IPAddress = "IP : " + inetAddress.getHostAddress() + "\n";
+            mod.addElement(IPAddress);
+
+            InitialDirContext iDirC = new InitialDirContext();
+
+            javax.naming.directory.Attributes attributes = iDirC.getAttributes("dns:/" + inetAddress.getHostName());
+
+            NamingEnumeration attributeEnumeration = attributes.getAll();
+            mod.addElement("Informasi DNS : ");
+
+            while (attributeEnumeration.hasMore()) {
+                mod.addElement(attributeEnumeration.next());
+            }
+            attributeEnumeration.close();
+        } catch (UnknownHostException exception) {
+            System.err.println("Error : Domain Tidak Diketahui '" + domain + "'");
+            exception.printStackTrace();
+        } catch (NamingException exception) {
+            System.err.println("Error : Tidak Ada Record DNS Di Domain '" + domain + "'");
+            exception.printStackTrace();
         }
     }//GEN-LAST:event_btnProsesActionPerformed
-
-    private void performDnsLookup(String hostName, DefaultListModel mod) {
-    try {
-        java.util.Hashtable<String, String> env = new java.util.Hashtable<>();
-        env.put("java.naming.provider.url", "dns://8.8.8.8"); // Use Google's DNS server as an example
-        env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-       env.put("java.naming.provider.timeout", "10000"); // Set the timeout to 10 seconds (adjust as needed)
- // Set the timeout to 5 seconds (adjust as needed)
-
-        DirContext dirContext = new InitialDirContext(env);
-
-        Attributes attributes = dirContext.getAttributes(hostName);
-
-        NamingEnumeration<? extends Attribute> attributeEnumeration = attributes.getAll();
-
-        mod.addElement("Informasi DNS untuk " + hostName + " : ");
-
-        while (attributeEnumeration.hasMore()) {
-            Attribute attribute = attributeEnumeration.next();
-            mod.addElement(attribute.getID() + ": " + attribute.get());
-        }
-
-        attributeEnumeration.close();
-    } catch (Exception e) {
-        System.err.println("Error: Tidak Ada Record DNS Di Domain '" + hostName + "'");
-        e.printStackTrace();
-    }
-}
-
     
     /**
      * @param args the command line arguments
