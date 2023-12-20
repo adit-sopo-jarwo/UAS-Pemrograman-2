@@ -42,7 +42,7 @@ public class javaDNS extends javax.swing.JFrame {
         listHasil = new javax.swing.JList<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Muhamad Aditya - Java DNS Lookup ");
+        setTitle("Muhamad Aditya Dwi Septiawan - Java DNS Lookup ");
         setResizable(false);
 
         btnProses.setText("Proses");
